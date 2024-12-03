@@ -1,84 +1,69 @@
-//
-//  Timer_Widget.swift
-//  Timer_Widget
-//
-//  Created by 𝐶. on 2024-12-02.
-//
-
-import WidgetKit
 import SwiftUI
+import ActivityKit
+import WidgetKit
 
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), emoji: "😀")
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = SimpleEntry(date: Date(), emoji: "😀")
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, emoji: "😀")
-            entries.append(entry)
-        }
-
-        let timeline = Timeline(entries: entries, policy: .atEnd)
-        completion(timeline)
-    }
-
-//    func relevances() async -> WidgetRelevances<Void> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
-}
-
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let emoji: String
-}
-
-struct Timer_WidgetEntryView : View {
-    var entry: Provider.Entry
-
-    var body: some View {
-        VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Emoji:")
-            Text(entry.emoji)
-        }
-    }
+func elapsedMinutes(from startTime: Date) -> Int {
+    let elapsed = Date().timeIntervalSince(startTime)
+    return Int(elapsed / 60) // Dakikaya çevir
 }
 
 struct Timer_Widget: Widget {
-    let kind: String = "Timer_Widget"
-
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            if #available(iOS 17.0, *) {
-                Timer_WidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                Timer_WidgetEntryView(entry: entry)
-                    .padding()
-                    .background()
+        ActivityConfiguration(for: TimeTrackingAttributes.self) { context in
+            TimeTrackingWidgetView(context: context)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Text("Tracking")
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("Active")
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    Text("Elapsed Time: \(elapsedMinutes(from: context.state.startTime)) min")
+                        .font(.headline)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text("Tap to stop")
+                }
+            } compactLeading: {
+                Text("\(elapsedMinutes(from: context.state.startTime)) min")
+                    .font(.caption)
+            }
+            compactTrailing: {
+                Text("Active")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+            minimal: {
+                Image(systemName: "clock")
             }
         }
-        .configurationDisplayName("My Widget")
-        .description("This is an example widget.")
     }
 }
 
-#Preview(as: .systemSmall) {
-    Timer_Widget()
-} timeline: {
-    SimpleEntry(date: .now, emoji: "😀")
-    SimpleEntry(date: .now, emoji: "🤩")
+struct TimeTrackingWidgetView: View {
+    let context: ActivityViewContext<TimeTrackingAttributes>
+
+    var body: some View {
+        ZStack {
+            // Pastel mavi arka plan
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color("PastelBlue")) // Özelleştirilmiş pastel mavi renk
+                .shadow(radius: 5) // Hafif gölge
+
+            VStack(spacing: 8) {
+                Text("Tracking Active")
+                    .font(.headline)
+                    .foregroundColor(.primary) // Dinamik renk uyumu
+                
+                Text("Elapsed Time: \(context.state.startTime, style: .relative)")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            }
+            .padding(12) // İçerik için iç boşluk
+        }
+        .frame(maxWidth: .infinity, maxHeight: 60) // Widget boyutlandırması
+        .padding() // Genel kenar boşluğu
+    }
 }

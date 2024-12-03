@@ -1,8 +1,8 @@
-//
-//  TimeTrackingAttributes.swift
-//  gui_noti
-//
-//  Created by 𝐶. on 2024-12-01.
-//
-
+import ActivityKit
 import Foundation
+
+struct TimeTrackingAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var startTime: Date
+    }
+}

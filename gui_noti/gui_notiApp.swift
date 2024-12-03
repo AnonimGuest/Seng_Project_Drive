@@ -1,17 +1,26 @@
-//
-//  gui_notiApp.swift
-//  gui_noti
-//
-//  Created by 𝐶. on 2024-12-01.
-//
-
 import SwiftUI
+import UserNotifications
 
 @main
 struct gui_notiApp: App {
+    init() {
+        requestNotificationPermission()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+    }
+    
+    func requestNotificationPermission() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error = error {
+                print("Notification permission error: \(error.localizedDescription)")
+            } else {
+                print("Notification permission granted: \(granted)")
+            }
         }
     }
 }
